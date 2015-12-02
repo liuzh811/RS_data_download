@@ -1,6 +1,6 @@
 ; run the code in IDL 8.4
 ; note, there is NO spatial information in the output tif files
-pro hdf2tif_mod44b_2
+pro hdf2tif_mod44b_2 ;hdf2tif_mod44b_2 is the pro name, stored in local folder
 
 ; combine array before write out to tif
 ; only for h = 16:18, v = 8
