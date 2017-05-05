@@ -86,6 +86,7 @@ dlmcd43 <- function(product, #e.g., MCD43A2, MCD43A4
                       mod.date$day == as.character(substr(end_date, 7, 8)))
 
   #create a folder to store hdf data
+
   dir.create(paste(getwd(),"/",output_loc, sep = ""))
   for (i in start_idx:end_idx){
     url1 <- paste(url, product, ".00",version,"/",
@@ -96,6 +97,7 @@ dlmcd43 <- function(product, #e.g., MCD43A2, MCD43A4
     free(doc)
     for(j in 1:length(tileh)){      
       for(k in 1:length(tilev)){
+
         #only select h17v07/h17v08
         fn = links[which(substr(links, 18, 23) == paste("h",tileh[j],"v",tilev[k], sep = ""))]
         download.file(paste(url1, fn[1], sep = ""), 
@@ -105,7 +107,8 @@ dlmcd43 <- function(product, #e.g., MCD43A2, MCD43A4
       } # end of k
     } #end if j
     print(paste("Finish downloading ", i - start_idx, "of", end_idx-start_idx, "of", product, " at ", format(Sys.time(), "%a %b %d %X %Y"), sep = " ") )
-    } #end of i
+
+  } #end of i
 }
 
 setwd("D:/users/Zhihua/MODIS/NBARV006")
@@ -160,3 +163,101 @@ for (i in 5:length(mod.date)){
 
 #change the hdf into raster files using IDL
 # see hdf2tif.pro
+# downlaod MODIS MCD43A4 and MCD43A2 data
+
+#load library
+
+library("MODIS")
+library(rgdal)
+library(raster)
+
+MODISoptions(localArcPath="C:/zhihua/modis_data",
+             outDirPath="C:/zhihua/modis_data",
+             gdalPath='C:/zhihua/OSGeo4W64/bin')  # OSGeo4W64 installation directory
+			 
+
+dates <- as.POSIXct( as.Date(c("1/1/2003","31/12/2015"),format = "%d/%m/%Y") )
+dates2 <- transDate(dates[1],dates[2]) # Transform input dates from before
+proj.geo = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0 "
+
+# LST MYD11C3 
+product="MYD11C3"
+collection = getCollection(product, collection=NULL, newest=TRUE, forceCheck=FALSE, as="character", quiet=TRUE)
+
+# get hdf first
+getHdf(product = product, 
+        collection = collection,
+        begin=dates2$beginDOY,
+        end = dates2$endDOY)
+		
+# get sds in the hdf file		
+getSds(HdfName="C:/zhihua/modis_data/MODIS/MYD11C3.005/2003.01.01/MYD11C3.A2003001.005.2007274185043.hdf",method="gdal") # require GDAL (FWTools on Windows)
+
+# extract data in hdf files
+runGdal(product=product,  
+        collection = collection,
+        begin=dates2$beginDOY,
+        end = dates2$endDOY,
+        # tileH = 16:18,tileV = 7:8,
+        SDSstring = "110001100000001110", #
+        outProj=proj.geo,
+        job = "MYD11C3_LST")
+
+		
+# albedo MCD43C3 
+product="MCD43C3"
+collection = getCollection(product, collection=NULL, newest=TRUE, forceCheck=FALSE, as="character", quiet=TRUE)
+
+# get hdf first
+dates <- as.POSIXct( as.Date(c("1/1/2005","31/12/2015"),format = "%d/%m/%Y") )
+dates2 <- transDate(dates[1],dates[2]) # Transform input dates from before
+
+getHdf(product = product, 
+        collection = collection,
+        begin=dates2$beginDOY,
+        end = dates2$endDOY)
+		
+runGdal(product=product,  #Nadir BRDF-Adjusted Reflectance, 1000 m reso
+        collection = collection,
+        begin=dates2$beginDOY,
+        end = dates2$endDOY,
+        # tileH = 16:18,tileV = 7:8,
+        SDSstring = "1", #only extract the first layers
+        outProj=proj.geo,
+        job = "MCD43C3_ALBEDO")
+
+
+# VIs MYD13C2
+product="MYD13C2"
+collection = getCollection(product, collection=NULL, newest=TRUE, forceCheck=FALSE, as="character", quiet=TRUE)
+
+runGdal(product=product,  #Nadir BRDF-Adjusted Reflectance, 1000 m reso
+        collection = collection,
+        begin=dates2$beginDOY,
+        end = dates2$endDOY,
+        # tileH = 16:18,tileV = 7:8,
+        SDSstring = "1", #only extract the first layers
+        outProj=proj.geo,
+        job = "MYD13C2_VI")
+
+# Land cover MCD12C1	
+product="MCD12C1"
+collection = getCollection(product, collection=NULL, newest=TRUE, forceCheck=FALSE, as="character", quiet=TRUE)
+
+runGdal(product=product,  #Nadir BRDF-Adjusted Reflectance, 1000 m reso
+        collection = collection,
+        begin=dates2$beginDOY,
+        end = dates2$endDOY,
+        # tileH = 16:18,tileV = 7:8,
+        SDSstring = "1", #only extract the first layers
+        outProj=proj.geo,
+        job = "MCD12C1_LC")
+
+# MODIS ET
+# file want to download: files.ntsg.umt.edu/data/NTSG_Products/MOD16/MOD16A2_MONTHLY.MERRA_GMAO_1kmALB/GEOTIFF_0.05degree 
+
+# see the document in the MODIS_ET to see how to download using wget
+wget –l 0 –r –nH –np –I \
+data/NTSG_Products/MOD16/MOD16A2_MONTHLY.MERRA_GMAO_1kmALB/GEOTIFF_0.05degree*, \
+data/NTSG_Products/MOD16/MOD16A2_MONTHLY.MERRA_GMAO_1kmALB/GEOTIFF_0.05degree, \
+–R *.html,*.htm files.ntsg.umt.edu/data/NTSG_Products/MOD16/MOD16A2_MONTHLY.MERRA_GMAO_1kmALB
