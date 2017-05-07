@@ -163,6 +163,8 @@ for (i in 5:length(mod.date)){
 
 #change the hdf into raster files using IDL
 # see hdf2tif.pro
+
+###  5/5/2017, download data for fire/climate analysis
 # downlaod MODIS MCD43A4 and MCD43A2 data
 
 #load library
@@ -228,9 +230,27 @@ runGdal(product=product,  #Nadir BRDF-Adjusted Reflectance, 1000 m reso
 
 
 # VIs MYD13C2
+library("MODIS")
+library(rgdal)
+library(raster)
+
+MODISoptions(localArcPath="G:/modis_data",
+             outDirPath="G:/modis_data",
+             gdalPath='C:/OSGeo4W64/bin')  # OSGeo4W64 installation directory		 
+
+dates <- as.POSIXct( as.Date(c("1/1/2003","31/12/2015"),format = "%d/%m/%Y") )
+dates2 <- transDate(dates[1],dates[2]) # Transform input dates from before
+proj.geo = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0 "
+
 product="MYD13C2"
 collection = getCollection(product, collection=NULL, newest=TRUE, forceCheck=FALSE, as="character", quiet=TRUE)
-
+MODISoptions() # to get MODIS setup
+# get hdf files
+getHdf(product = product, 
+        collection = collection,
+        begin=dates2$beginDOY,
+        end = dates2$endDOY)
+	
 runGdal(product=product,  #Nadir BRDF-Adjusted Reflectance, 1000 m reso
         collection = collection,
         begin=dates2$beginDOY,
@@ -243,6 +263,11 @@ runGdal(product=product,  #Nadir BRDF-Adjusted Reflectance, 1000 m reso
 # Land cover MCD12C1	
 product="MCD12C1"
 collection = getCollection(product, collection=NULL, newest=TRUE, forceCheck=FALSE, as="character", quiet=TRUE)
+# get hdf first
+getHdf(product = product, 
+        collection = collection,
+        begin=dates2$beginDOY,
+        end = dates2$endDOY)
 
 runGdal(product=product,  #Nadir BRDF-Adjusted Reflectance, 1000 m reso
         collection = collection,
@@ -261,3 +286,49 @@ wget –l 0 –r –nH –np –I \
 data/NTSG_Products/MOD16/MOD16A2_MONTHLY.MERRA_GMAO_1kmALB/GEOTIFF_0.05degree*, \
 data/NTSG_Products/MOD16/MOD16A2_MONTHLY.MERRA_GMAO_1kmALB/GEOTIFF_0.05degree, \
 –R *.html,*.htm files.ntsg.umt.edu/data/NTSG_Products/MOD16/MOD16A2_MONTHLY.MERRA_GMAO_1kmALB
+
+# MODIS burned area
+http://modis-fire.umd.edu/pages/BurnedArea.php?target=Download
+
+# download MYD13C2 V6
+
+workdir = "G:/modis_data"
+setwd(workdir)
+library(XML)
+library(RCurl)
+
+#construct date first
+mod.year = c(2003:2015)
+mod.md = c("01.01","02.01","03.01","04.01","05.01","06.01","07.01","08.01","09.01","10.01","11.01","12.01")
+mod.date = paste(rep(mod.year, each = 12), rep(mod.md, 13), sep = ".")
+
+#get url
+url <- "https://e4ftl01.cr.usgs.gov/MOLA/"
+
+useid = "liuzh811"
+pw = "LIUzhihua1016"
+
+for (i in 1:length(mod.date)){
+
+  url1 <- paste(url, "MYD13C2.006", "/",mod.date[i],"/", sep = "")
+  doc <- getURI(url1)
+  links = strsplit(doc, "href=\"")[[1]]
+  # doc <- htmlParse(url1)
+  # links <- xpathSApply(doc, "//a/@href")
+  # free(doc)
+  
+  download.dir = paste(workdir, "/MODIS/MYD13C2.006", sep = "")
+  dir.create(file.path(download.dir, mod.date[i]), showWarnings = FALSE)
+ 
+#select files 
+  fn = links[11]
+  fn = strsplit(fn,"\">")[[1]][1]
+  download.file(paste("http://liuzh811:LIUzhihua1016@", substr(url1,8,nchar(url1)), fn, sep = ""), #suppy usename and password
+                    destfile = paste(download.dir,"/",mod.date[i],"/", fn, sep = ""),
+                    mode = "wb")
+  
+} #end of i
+
+
+
+
