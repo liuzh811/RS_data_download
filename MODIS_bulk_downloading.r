@@ -315,7 +315,7 @@ pw = "L**********16"
 for (i in 1:length(mod.date)){
 
   url1 <- paste(url, "MYD13C2.006", "/",mod.date[i],"/", sep = "")
-  doc <- getURI(url1)
+  doc <- getURL(url1)
   links = strsplit(doc, "href=\"")[[1]]
   # doc <- htmlParse(url1)
   # links <- xpathSApply(doc, "//a/@href")
@@ -332,6 +332,60 @@ for (i in 1:length(mod.date)){
                     destfile = paste(download.dir,"/",mod.date[i],"/", fn, sep = ""),
                     method = "auto")
  
+} #end of i
+
+# download MODIS VCF: MOD44B V006 from LP DAAC
+
+
+workdir = "G:/modis_data"
+setwd(workdir)
+library(XML)
+library(RCurl)
+
+#construct date first
+mod.year = c(2000:2016)
+md2 = "03.06"; md1 = "03.05"
+mod.date = paste(mod.year, c(rep(c(md1,md2,md2,md2),4),md1), sep = ".")
+
+#get url
+url <- "https://e4ftl01.cr.usgs.gov/MOLT/"
+
+# Reading information from a password protected site
+# http://stackoverflow.com/questions/5420506/reading-information-from-a-password-protected-site
+# http://stackoverflow.com/questions/6415798/how-to-access-a-web-service-that-requires-authetication
+# useid = "l*****11"
+# pw = "L**********16"
+
+useid = "l***1"
+pw = "L***6"
+
+
+for (i in 1:length(mod.date)){
+
+  url1 <- paste(url, "MOD44B.006", "/",mod.date[i],"/", sep = "")
+  doc <- getURL(url1)
+  links = strsplit(doc, "href=\"")[[1]]
+  # find MOD44B
+  links = links[which(substr(links, 1,6) == "MOD44B")]
+  links = links[seq(1,length(links), by = 2)]
+  links = substr(links, 1, 44)
+  # doc <- htmlParse(url1)
+  # links <- xpathSApply(doc, "//a/@href")
+  # free(doc)
+  
+  download.dir = paste(workdir, "/MODIS/MOD44B.006", sep = "")
+  dir.create(file.path(download.dir, mod.date[i]), showWarnings = FALSE)
+ 
+  
+# download files
+fn = links
+ for (j in 1:length(links)){
+   download.file(paste("http://", useid, ":", pw, "@", substr(url1,9,nchar(url1)), fn[j], sep = ""), #suppy usename and password
+                    destfile = paste(download.dir,"/",mod.date[i],"/", fn[j], sep = ""),
+                    method = "auto")
+ 
+ } 
+
 } #end of i
 
 
