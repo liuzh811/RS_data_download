@@ -290,7 +290,8 @@ data/NTSG_Products/MOD16/MOD16A2_MONTHLY.MERRA_GMAO_1kmALB/GEOTIFF_0.05degree, \
 # MODIS burned area
 http://modis-fire.umd.edu/pages/BurnedArea.php?target=Download
 
-# download MYD13C2 V6
+# download MYD13C2 V6 directly from LP DAAC
+
 
 workdir = "G:/modis_data"
 setwd(workdir)
@@ -305,8 +306,11 @@ mod.date = paste(rep(mod.year, each = 12), rep(mod.md, 13), sep = ".")
 #get url
 url <- "https://e4ftl01.cr.usgs.gov/MOLA/"
 
-useid = "liuzh811"
-pw = "LIUzhihua1016"
+# Reading information from a password protected site
+# http://stackoverflow.com/questions/5420506/reading-information-from-a-password-protected-site
+# http://stackoverflow.com/questions/6415798/how-to-access-a-web-service-that-requires-authetication
+useid = "l*****11"
+pw = "L**********16"
 
 for (i in 1:length(mod.date)){
 
@@ -323,10 +327,11 @@ for (i in 1:length(mod.date)){
 #select files 
   fn = links[11]
   fn = strsplit(fn,"\">")[[1]][1]
-  download.file(paste("http://liuzh811:LIUzhihua1016@", substr(url1,8,nchar(url1)), fn, sep = ""), #suppy usename and password
+
+  download.file(paste("http://", useid, ":", pw, "@", substr(url1,9,nchar(url1)), fn, sep = ""), #suppy usename and password
                     destfile = paste(download.dir,"/",mod.date[i],"/", fn, sep = ""),
-                    mode = "wb")
-  
+                    method = "auto")
+ 
 } #end of i
 
 
