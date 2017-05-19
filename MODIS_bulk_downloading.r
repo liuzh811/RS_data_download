@@ -260,6 +260,7 @@ runGdal(product=product,  #Nadir BRDF-Adjusted Reflectance, 1000 m reso
         outProj=proj.geo,
         job = "MYD13C2_VI")
 
+
 # Land cover MCD12C1	
 product="MCD12C1"
 collection = getCollection(product, collection=NULL, newest=TRUE, forceCheck=FALSE, as="character", quiet=TRUE)
@@ -291,8 +292,6 @@ data/NTSG_Products/MOD16/MOD16A2_MONTHLY.MERRA_GMAO_1kmALB/GEOTIFF_0.05degree, \
 http://modis-fire.umd.edu/pages/BurnedArea.php?target=Download
 
 # download MYD13C2 V6 directly from LP DAAC
-
-
 workdir = "G:/modis_data"
 setwd(workdir)
 library(XML)
@@ -334,9 +333,36 @@ for (i in 1:length(mod.date)){
  
 } #end of i
 
+# covert hdf into geotif
+library("MODIS")
+library(rgdal)
+library(raster)
+library(sp)
+library(gdalUtils)
+
+workdir = "G:/modis_data"
+setwd(workdir)
+
+dirs = list.dirs('./MODIS/MYD13C2.0061', recursive=FALSE)
+for (i in 1:length(dirs)){
+file1 = list.files(path = dirs[i], pattern = "*.hdf$")
+sds <- get_subdatasets(paste0(dirs[i], "/", file1))
+
+base = substr(sds[1], 51, 67)
+output1 = paste0(base, "CMG_0.05_Deg_Monthly_NDVI.tif")
+output2 = paste0(base, "CMG_0.05_Deg_Monthly_EVI.tif")
+output3 = paste0(base, "CMG_0.05_Deg_Monthly_VI_Quality.tif")
+
+gdal_translate(sds[1], dst_dataset = paste0("./MYD13C2.006_VI/", output1))
+gdal_translate(sds[2], dst_dataset = paste0("./MYD13C2.006_VI/", output2))
+gdal_translate(sds[3], dst_dataset = paste0("./MYD13C2.006_VI/", output3))
+
+print(paste("Finish for ", i, " of ",length(dirs), " at ", format(Sys.time(), "%a %b %d %X %Y"), sep = " ") )
+
+}
+
+
 # download MODIS VCF: MOD44B V006 from LP DAAC
-
-
 workdir = "G:/modis_data"
 setwd(workdir)
 library(XML)
